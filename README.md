@@ -86,41 +86,96 @@ RestartSec=10
 WantedBy  graphical.target
 ```
 
-#### SYSTEMD Tools
-Two major tools are systemctl and jorunalctl
+An example of the chronyd.service found /etc/systemd/system/chronyd.service:
+```
+$ cat chronyd.service 
+[Unit]
+Description=chrony, an NTP client/server
+Documentation=man:chronyd(8) man:chronyc(1) man:chrony.conf(5)
+Conflicts=systemd-timesyncd.service openntpd.service ntp.service ntpsec.service
+After=network.target
+ConditionCapability=CAP_SYS_TIME
+
+[Service]
+Type=forking
+PIDFile=/run/chronyd.pid
+EnvironmentFile=-/etc/default/chrony
+ExecStart=/usr/sbin/chronyd $DAEMON_OPTS
+ExecStartPost=-/usr/lib/chrony/chrony-helper update-daemon
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=full
+
+[Install]
+Alias=chronyd.service
+WantedBy=multi-user.target
+
+```
+
+We can now restart the service.  First run the daemon-reload command and then start the service
+```
+$ systemctl daemon-reload
+$ systemctl start project-mercury.service
+```
+
+
+
+### SYSTEMD Tools
+Two major tools for managing systemd targets are systemctl and jorunalctl
   
-sytemctl can 
+sytemctl main command to manage services on systemd manage server and can:
 - manage system state
 - start, stop, restart, reload
 - enable/disable
 - list and manage units
 - list and update targets
   
-                             
-                             
-systemctl commands
+journalctl can query the contents of the query systemd journal for status and troubleshooting
+
+
+systemctl commonly used commands
 ```
 $ systemctl start docker
 $ systemctl stop docker
-$ systemctl reastart docker
-$ systemctl reload docker
-$ systemctl enable docker
-$ systemctl disable docker
-$ systemctl status docker
-$ systemctl daemon-reload
+$ systemctl reastart docker - starts and stops service
+$ systemctl reload docker - reloads service with out interrupting running service
+$ systemctl enable docker - sets the service to load at startup
+$ systemctl disable docker - removes the service from loading at startup
+$ systemctl status docker - provids information about the status of the services
+```
+
+Service States   
+State | Meaning
+------|--------
+Active | Service is running
+Inactive | Service is stopped
+Failed | The services has crashed/timedout/has an error, etc.
+
+Running systemctl daemon-reload command after making changes to a service unit file, reloads system manager configuration making systemd aware of the changes.
+```
+$ systemctl daemon-reload - running this command reloads system manager configuration making systemd aware of the changes.
+```
+You can directly edit the unit service file. Units edit this way apply the changes right away with out running daemon-reload
+```
 $ systecmctl edit project-mercury.service --full
 ```
+
 Manage state
 ```
-$ systemctl get-default
-$ systemctl set-default mutli-user.target
+$ systemctl get-default - shows current run target
+$ systemctl set-default mutli-user.target - change run targets
 $ systemctl list-units --all
 ```
+To see only active units run
+```
+$ systemctl list-units
+```
   
-journalctl - checks journal or log enteries
+journalctl useful trouble shooting any serviceschecks journal or log enteries
 ```
 $ journalctl
-$ journalctl -b
-$ journalctl -u docker.service
+$ journalctl -b - logs from current boot
+$ journalctl -u docker.service - logs from a particular service
 ```
                 
+The data from the service logs file can help with fixing a problem with a service
