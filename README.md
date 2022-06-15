@@ -46,7 +46,45 @@ $ systemctl status chrony
 Jun 15 09:37:18 ns01.example.com chronyd[636]: Selected source NMEA
 ...
 ```
+Stop service with...
+```
+$ systemctl stop project-mercury.service
+```
 
+Enable service to start automatically at boot time.  We need to update the service unit file by adding an [Install] section. Use WantedBy directive for systemd or run target level
+```
+[Service]
+ExecStart= /bin/bash /usr/bin/project-mercury.sh
+[Install]
+WantedBy graphical.target
+```
+Let's add the serivce account to start the service instead of root with User= and Restart and RestartSec for failures
+```
+[Service]
+ExecStart= /bin/bash /usr/bin/project-mercury.sh
+User=project_mercury
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy  graphical.target
+```
+Since the Django Python services depends on the PostGress DB being ready add [Unit] section.  Description and documentation are optional
+```
+[Unit]
+Description=Python Django for Project Mercury
+Documentation=http://wiki.caleston-dev.ca/mercur
+After=postgresql.service
+
+[Service]
+ExecStart= /bin/bash /usr/bin/project-mercury.sh
+User=project_mercury
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy  graphical.target
+```
 
 #### SYSTEMD Tools
 Two major tools are systemctl and jorunalctl
